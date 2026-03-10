@@ -12,9 +12,53 @@ Turns a screenplay or shot breakdown into character reference sheets, location c
 
 ## Setup
 
-1. Copy `.env.example` to `.env` and add your Replicate API token
-2. Install Python dependencies: `pip install Pillow pytest`
-3. The MCP server (`@replicate/mcp`) is auto-configured in `mcp.json`
+### 1. Set your Replicate API token
+
+Store your token as a **system environment variable** — not in a `.env` file.
+Environment variables are never committed to version control and are not
+readable by other tools scanning your project files.
+
+Get your token at https://replicate.com/account/api-tokens
+
+**Windows (PowerShell — permanent, persists across reboots):**
+
+```powershell
+setx REPLICATE_API_TOKEN "r8_your_token_here"
+```
+
+Then **restart your terminal** for the change to take effect.
+To verify: `echo %REPLICATE_API_TOKEN%` (cmd) or `$env:REPLICATE_API_TOKEN` (PowerShell).
+
+**macOS / Linux (permanent — add to your shell profile):**
+
+```bash
+# For zsh (default on macOS):
+echo 'export REPLICATE_API_TOKEN="r8_your_token_here"' >> ~/.zshrc
+source ~/.zshrc
+
+# For bash:
+echo 'export REPLICATE_API_TOKEN="r8_your_token_here"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+To verify: `echo $REPLICATE_API_TOKEN`
+
+> **Why not `.env`?** Files in your project directory can be read by Claude Code,
+> coworkers with repo access, and any tool with filesystem permissions. A system
+> environment variable stays outside the project tree entirely. The `mcp.json`
+> already uses `${REPLICATE_API_TOKEN}` substitution, so it picks up the
+> environment variable automatically — no `.env` needed.
+
+### 2. Install Python dependencies
+
+```bash
+pip install Pillow pytest
+```
+
+### 3. MCP server (auto-configured)
+
+The Replicate MCP server is declared in `mcp.json` and starts automatically
+when Claude Code loads the plugin. No manual setup required.
 
 ## Usage
 

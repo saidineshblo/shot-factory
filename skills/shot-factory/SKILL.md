@@ -96,8 +96,9 @@ Verify `PLUGIN_SCRIPTS` exists. If not, tell the user the plugin is misconfigure
 
 ## Requirements
 
-- **Replicate API token** — set `REPLICATE_API_TOKEN` in your environment
-  or `.env` file. The MCP server declared in `mcp.json` handles the connection.
+- **Replicate API token** — set `REPLICATE_API_TOKEN` as a system environment
+  variable (see README for platform-specific instructions). The MCP server
+  declared in `mcp.json` picks it up automatically via variable substitution.
 - **Python 3.9+** with Pillow installed (`pip install Pillow`)
 - **Replicate MCP server** — `npx -y @replicate/mcp` (auto-configured in mcp.json)
 

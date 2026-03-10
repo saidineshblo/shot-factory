@@ -1,0 +1,10 @@
+# Environment
+.env
+
+# Runtime project output — never commit generated assets
+project_*/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/

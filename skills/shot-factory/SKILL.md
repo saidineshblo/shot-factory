@@ -1,20 +1,39 @@
 ---
 name: shot-factory
-description: End-to-end animated film pre-production pipeline MASTER AGENT. Turns USER INTENT AND THEN PROPERLY ASSIGN IT TO VARIOUS SUB AGENTS TO GO FOR  script into character sheets, location sheets, and shot frames using Replicate image generation BY MAINTAINING PROER MEMORY AND TO DO LIST .
+description: Master skill for an AI movie pre-production pipeline. Understands user queries and routes work to sub-skills for script parsing, character sheets, location sheets, shot grids, and contact sheet generation, while keeping a consistent project state and memory.
+version: 1.0.0
 ---
 
 # Shot Factory
 
-> End-to-end animated film pre-production pipeline.
-> Turns a script into character sheets, location sheets, and shot frames using various sub-agnets and sub-skills
+> Master skill for a movie AI generator plugin.
+> Understands the user's request and either runs a full end-to-end pipeline or dispatches focused sub-skills for characters, locations, shots, or parsing only.
 
 ---
 
-## What This Plugin Does
+## What This Master Skill Does
 
-Shot Factory takes a screenplay or shot breakdown and produces visual references for characters, locations, and shots. It uses a series of sub-skills to parse the script, generate character and location sheets, and create shot frames. The final output is a contact sheet summarizing the entire project.
+Shot Factory takes a screenplay or shot breakdown and produces visual references for characters, locations, and shots. It uses a series of sub-skills and agents to:
 
-## Commands
+- Parse scripts into structured act CSVs, character lists, and location lists.
+- Generate **multi-angle character sheets** (with optional user reference images).
+- Generate **multi-angle location sheets** (with support for multiple views or floor-plan-style layouts via prompts).
+- Generate **shot grids** per scene with continuity across shots, based on a master shot breakdown CSV.
+- Keep a **stateful project folder** (via the Producer pattern) so you can resume, regenerate, or inspect progress at any time.
+- Build a **contact sheet** summarizing the entire project.
+
+For simple, targeted tasks (for example: just generate character sheets, or only generate shots from an existing breakdown), the master skill:
+
+- Reads the user's intent.
+- Locates or initializes a project via Producer.
+- Dispatches only the necessary agents (character-sheet, location-sheet, shot-grid).
+
+For complex tasks (for example: "generate an end-to-end movie from this script"), the master skill:
+
+- Uses the pipeline-runner sub-skill to go from raw script through breakdown, confirmation, generation, retries, and contact sheet output.
+- Ensures that the Producer pattern is respected so state is updated at every major step.
+
+## Commands / Intents
 
 | Intent            | Trigger phrases                                                          |
 | ----------------- | ------------------------------------------------------------------------ |
@@ -44,6 +63,27 @@ images yet.
 
 **Dispatch:** `sub-skills/script-parser/SKILL.md`
 
+### SIMPLE_GENERATION
+
+The user clearly asks for **only one type of asset** without running the whole pipeline. Examples:
+
+- "Just generate character sheets for these characters"
+- "Only make the location sheets"
+- "Create shots for this existing breakdown CSV"
+
+Handle SIMPLE_GENERATION by:
+
+1. Running **Producer Read** from `sub-skills/producer/SKILL.md` to locate or initialize a project.
+2. Making sure the relevant registry file exists:
+   - Characters: `{project_root}/characters/characters.json`
+   - Locations: `{project_root}/locations/locations.json`
+   - Shots: `{project_root}/shots/shots_master.csv`
+3. Dispatching only the specific agents needed:
+   - `agents/character-sheet/AGENT.md` for character sheets.
+   - `agents/location-sheet/AGENT.md` for location sheets.
+   - `agents/shot-grid/AGENT.md` for shot generation by scene.
+4. Updating `project.json` via the Producer pattern so the work can be resumed or extended later.
+
 ### RESUME
 
 The user references an existing project and wants to continue from where
@@ -71,21 +111,21 @@ The user wants to check progress on an existing project.
 
 **Handle directly** — no sub-skill dispatch needed:
 
-1. Follow Producer Read from `sub-skills/producer/SKILL.md`
-2. Read project.json
+1. Follow Producer Read from `sub-skills/producer/SKILL.md`.
+2. Read `project.json`.
 3. Report:
-   - Project name and status
-   - Current stage
-   - Characters: {completed}/{total}
-   - Locations: {completed}/{total}
-   - Shots: {completed}/{total} ({failed} failed)
-   - Next action recommendation
+   - Project name and status.
+   - Current stage (`breakdown`, `characters`, `locations`, `shots`, or `done`).
+   - Characters: {completed}/{total}.
+   - Locations: {completed}/{total}.
+   - Shots: {completed}/{total} ({failed} failed).
+   - Next action recommendation (for example: "confirm characters", "generate locations", "run shot grid", "review failed shots", or "rebuild contact sheet").
 
 ---
 
 ## Preflight (All Intents)
 
-Before dispatching any sub-skill, run these checks in order:
+Before dispatching any sub-skill or agent, run these checks in order:
 
 ### 1. Resolve Paths
 
@@ -110,7 +150,7 @@ Call the Replicate MCP tool `get_account` (no parameters needed).
   "Replicate API token is missing or invalid.
   Set REPLICATE_API_TOKEN as a system environment variable and restart
   Claude Code. See README for setup instructions."
-  **Do NOT proceed to any sub-skill.**
+  **Do NOT proceed to any sub-skill or agent.**
 
 ---
 
@@ -126,7 +166,9 @@ Call the Replicate MCP tool `get_account` (no parameters needed).
 
 ## Project Structure
 
-When running, Shot Factory creates a project folder:
+When running, Shot Factory uses the **Producer** pattern to create and maintain a project folder that all sub-skills and agents share.
+
+At a high level the structure is:
 
 ```
 project_{name}_{timestamp}/
@@ -134,16 +176,18 @@ project_{name}_{timestamp}/
     original.{ext}
   breakdown/
     act_01.csv
+    act_02.csv
+    act_03.csv
     master_breakdown.csv
   characters/
     characters.json
-    {name}/
+    {character_name}/
       sheet.png
       sheet_labelled.png
       sheet.json
   locations/
     locations.json
-    {name}/
+    {location_name}/
       overview_sheet.png
       overview_sheet_labelled.png
       overview_sheet.json
@@ -156,3 +200,61 @@ project_{name}_{timestamp}/
     project.json
   contact_sheet.html
 ```
+
+### Characters Registry
+
+`characters/characters.json` keeps a registry of every character:
+
+- `description` — free-text description of the character.
+- `user_ref_path` — optional path to a user-provided reference image.
+- `sheet_status` — `"pending"`, `"completed"`, or `"failed"`.
+- `sheet_local_path`, `sheet_labelled_path`, `sidecar_path` — filled in by the character-sheet agent.
+- `appearances` — list of scenes where the character appears.
+
+The character-sheet agent generates a **multi-angle character sheet** and always:
+
+- Validates any `user_ref_path` using `scripts/validate_reference.py`.
+- Generates `sheet.png`, labels it into `sheet_labelled.png`, and writes a `sheet.json` sidecar with details and Replicate URLs.
+- Updates `characters.json` and increments the `characters.completed` count in `state/project.json`.
+
+### Locations Registry
+
+`locations/locations.json` keeps a registry of every location:
+
+- `description` — free-text description of the location.
+- `int_ext` — whether the scene is INT or EXT.
+- `time_of_day` — DAY, NIGHT, etc.
+- `sheet_status` — `"pending"`, `"completed"`, or `"failed"`.
+- `sheet_local_path`, `sheet_labelled_path`, `sidecar_path` — filled in by the location-sheet agent.
+- `scenes` — list of scenes that use this location.
+
+The location-sheet agent generates **multi-angle overview sheets** and can support multiple sheets per location via additional entries or sidecar metadata, including layout details like floor plans when prompted.
+
+### Shots Registry and Continuity
+
+`shots/shots_master.csv` is the canonical list of shots. The Director agent:
+
+- Parses the script (TXT, Fountain, FDX, PDF, DOCX, or CSV).
+- Splits long scripts into acts and writes `act_*.csv` files.
+- Writes a merged `master_breakdown.csv`.
+- Copies the master breakdown into `shots/shots_master.csv` with at least:
+  - `act, scene_number, shot_number, shot_type, angle, characters, location, action_description, dialogue_hint, time_of_day, continuity_notes, replicate_url, status, local_path, attempts`.
+  - All `status` values start as `"pending"` and `replicate_url` is empty.
+
+The shot-grid agent:
+
+- Works **scene by scene**, generating every shot in that scene while:
+  - Loading character and location labelled sheets as references.
+  - Building continuity context from the previous shot in the same scene.
+  - Ensuring that shots within a scene feel like a continuous sequence, not isolated images.
+- Updates each row in `shots_master.csv` with:
+  - `status = "completed"` or `"failed"`.
+  - `local_path` to the saved PNG.
+  - `replicate_url` pointing back to the Replicate prediction.
+  - Any error information for failed shots.
+
+Across all of these, **Producer Read/Write** and `state/project.json` keep the global status in sync so:
+
+- You can **resume** a project without redoing completed work.
+- You can **regenerate** specific characters, locations, or shots.
+- You can **inspect status** at any time and know exactly what remains.

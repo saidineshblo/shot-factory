@@ -120,3 +120,38 @@ Only the pipeline-runner advances the stage. Individual agents do not.
 
 See `references/prompt-templates.md` section 6 for the full schema definition.
 That is the single source of truth.
+
+---
+
+## State Verification
+
+`scripts/verify_state.py` is a deterministic safety net that reconciles
+file-system reality with the project state files. It exists because LLM agents
+occasionally complete their work (files are generated and saved) but forget to
+update the corresponding JSON or CSV state entries.
+
+**How it works:**
+
+1. Reads `state/project.json`, `characters/characters.json`,
+   `locations/locations.json`, and `shots/shots_master.csv`.
+2. For each asset, checks whether the expected output file exists on disk.
+   If the file exists but the status says "pending", it corrects the status
+   to "completed" and populates the local path. If the status says "completed"
+   but the file is missing, it resets the status to "pending".
+3. Recounts totals in `project.json` to match the corrected registries.
+4. Writes corrections using the same atomic-write pattern (`.tmp` + rename)
+   defined in the Producer Write section above.
+
+**When it runs:**
+
+The pipeline-runner calls `verify_state.py` after each major dispatch round:
+
+- After Step 3 (Script Parsing)
+- After Step 8 (Character + Location Generation)
+- After Step 9 (Shot Generation)
+- After Step 10 (Retry Handling)
+
+**Important:** Individual agents should still perform their own Producer Write
+at the end of their task. `verify_state.py` is a safety net, not a replacement
+for proper state management. It catches the edge cases where an agent completes
+its work but fails to persist the state update.

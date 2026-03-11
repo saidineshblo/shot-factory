@@ -31,7 +31,49 @@ You receive:
 
 ---
 
-## Step 2: Build Prompt
+## Step 2: Validate User Reference (if exists)
+
+Before generating location sheets, you may receive user-provided reference
+images for some locations (for example, existing layout or concept sheets).
+If so, copy each provided file path or public URL into the project and store
+its local path in the location's `user_ref_path` field in `locations.json`.
+
+If the location entry has a non-null `user_ref_path`:
+
+```bash
+python "{PLUGIN_SCRIPTS}/validate_reference.py" "{user_ref_path}"
+```
+
+If `validate_reference.py` reports that the image is too large or suggests
+resizing, first run the resize-only mode of `label_reference.py` to create
+a safe copy:
+
+```bash
+python "{PLUGIN_SCRIPTS}/label_reference.py" \
+  "{user_ref_path}" \
+  --resize-only \
+  --max-size 2048 \
+  --output "{project_root}/locations/{location_name}/user_ref_resized.png"
+```
+
+Then, create a **tagged** version of the safe reference so that the model
+can clearly read what this location is:
+
+```bash
+python "{PLUGIN_SCRIPTS}/label_reference.py" \
+  "{project_root}/locations/{location_name}/user_ref_resized.png" \
+  --type location \
+  --name "{location_name}" \
+  --output "{project_root}/locations/{location_name}/user_ref_resized_labelled.png"
+```
+
+Update `user_ref_path` in memory to point to the **tagged, resized** file
+(`user_ref_resized_labelled.png`) so that any subsequent validation or
+`image_prompt` usage relies on the safe, tagged reference.
+
+---
+
+## Step 3: Build Prompt
 
 Read the location sheet prompt template from `references/prompt-templates.md`.
 
@@ -44,7 +86,7 @@ Assemble the prompt:
 
 ---
 
-## Step 3: Generate via Replicate MCP
+## Step 4: Generate via Replicate MCP
 
 Call `create_models_predictions` with:
 - `model_owner`: from `style_profile.model_owner`
@@ -56,7 +98,7 @@ Call `create_models_predictions` with:
 
 ---
 
-## Step 4: Save Output
+## Step 5: Save Output
 
 1. Download the output image from the prediction response
 2. Save to: `{project_root}/locations/{location_name}/overview_sheet.png`
@@ -75,7 +117,7 @@ python "{PLUGIN_SCRIPTS}/label_reference.py" \
 
 ---
 
-## Step 5: Producer Write
+## Step 6: Producer Write
 
 1. Re-read `{project_root}/locations/locations.json`
 2. Update this location's entry:

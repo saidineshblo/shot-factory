@@ -78,6 +78,15 @@ Read the generated files and present to the user:
 3. **Location list:** Names with INT/EXT and time of day
 
 4. **Act structure:** How many acts, scenes per act
+5. **Missing required fields:** Scan `breakdown/master_breakdown.csv` (or
+   `shots/shots_master.csv` if already copied) for any empty cells in the
+   required columns defined in `references/prompt-templates.md`:
+   `shot_type`, `angle`, `characters`, `location`, `action_description`,
+   `time_of_day`.
+
+   Present these grouped by column, for example:
+   - "Shots missing time_of_day: SC1-1, SC1-2, SC3-4"
+   - "Shots missing shot_type: SC2-3"
 
 ---
 
@@ -91,6 +100,19 @@ If yes, handle:
 - **Adjust shot breakdowns** — edit the act CSV files
 - **Re-split acts** — regenerate act boundaries
 
+When adjusting shot breakdowns, make sure to fill in **all missing values**
+for the required shot fields:
+
+- `shot_type`
+- `angle`
+- `characters`
+- `location`
+- `action_description`
+- `time_of_day`
+
+After edits, re-scan the breakdown to confirm there are **no empty cells**
+remaining in these required columns.
+
 After each edit, re-read and re-display the affected section.
 
 ---
@@ -102,5 +124,10 @@ Tell user:
 
 To generate images, run the pipeline:
   'Run the Shot Factory pipeline on {project_root}'"
+
+Treat `shots/shots_master.csv` (copied from the Director's
+`breakdown/master_breakdown.csv`) as the **updated shot breakdown** — the single
+source of truth for all later prompts. By the time this step completes, it
+should have no empty cells in the required columns listed above.
 
 Set `current_stage = "breakdown"` in project.json.

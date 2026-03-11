@@ -38,20 +38,49 @@ You receive:
 Read from project.json and registry files:
 
 **Characters:** For each character in this scene's shots:
-- Load their `sheet_labelled_path` from `characters/characters.json`
-- These will be passed as `image_prompt` inputs
+- Load their `sheet_labelled_path` from `characters/characters.json`.
+- If `sheet_labelled_path` is missing but `sheet_local_path` (or another
+  base image path) exists, create a tagged version **once** using
+  `label_reference.py` and update `sheet_labelled_path`:
+
+  ```bash
+  python "{PLUGIN_SCRIPTS}/label_reference.py" \
+    "{project_root}/{sheet_local_path}" \
+    --type character \
+    --name "{character_name}" \
+    --output "{project_root}/characters/{character_name}/sheet_labelled.png"
+  ```
+
+- Always use the **labelled** paths as `image_prompt` inputs.
 
 **Location:** For this scene's location:
-- Load `sheet_labelled_path` from `locations/locations.json`
+- Load `sheet_labelled_path` from `locations/locations.json`.
+- If `sheet_labelled_path` is missing but `sheet_local_path` (or another base
+  image path) exists, create a tagged version once using `label_reference.py`
+  and update `sheet_labelled_path`.
+- Always use the **labelled** path as the location `image_prompt` input.
 
 **Style references:** If `style_profile` has custom style reference paths,
-collect those too.
+prefer any `style_reference_labelled_paths` that were created in the
+pipeline-runner step. If only unlabelled style refs exist, tag them once here
+using `label_reference.py --type style` and update `style_profile` so future
+calls reuse the tagged versions.
+
+All reference images passed to Replicate for shot generation should be the
+**tagged** variants so the model can read the banners and clearly understand
+which image is which.
 
 ---
 
 ## Step 3: Process Each Pending Shot
 
-For each shot with `status` "pending" or "failed" in this scene:
+The simplest and most explicit approach is to generate **one Replicate call per
+shot**. This agent is written to support that 1:1 mapping, but it can also be
+extended to use grid-based batching (for example 2x2 grids) when there are
+multiple shots remaining in a scene.
+
+For the default 1-shot-per-call behavior, iterate over each row with
+`status == "pending"` or `"failed"` in this scene:
 
 ### 3a. Build Continuity Context
 
@@ -89,7 +118,21 @@ For each shot with `status` "pending" or "failed" in this scene:
 ### 3b. Build Prompt
 
 Read the shot grid prompt template from `references/prompt-templates.md`.
-Assemble using the continuity context.
+
+Use the current row from `shots_master.csv` plus the continuity context to
+fill every placeholder in the template:
+
+- `location_name`, `time_of_day`, `shot_type`, `angle`
+- `action_description`, `dialogue_hint` (omit this block if empty)
+- `characters` (comma-separated from the row)
+- Any `continuity_notes` that apply
+- Style details from `style_profile` (visual style, aspect ratio, etc.)
+
+The result must be a **single text prompt string** that:
+
+1. Clearly describes the scene, camera, characters, and action for this shot.
+2. Includes the continuity and style lock instructions from the template so
+   the model knows to follow the reference images exactly.
 
 ### 3c. Assemble image_prompt Input
 
@@ -102,9 +145,58 @@ Build the reference file list in this priority order:
 **Maximum 14 inputs total.** If over the limit, drop from the bottom of the
 list (previous shot first, then location, then extra characters).
 
+The final structure passed to Replicate should look like:
+
+- `input.prompt`: the single assembled text prompt from **3b**.
+- `input.aspect_ratio`: from `style_profile.aspect_ratio`.
+- `input.output_format`: `"png"`.
+- `input.image_prompt` (or the model's equivalent image-input field):
+  the ordered list of reference image file paths described above.
+
 ### 3d. Generate via Replicate MCP
 
-Call `create_models_predictions` with assembled prompt and image inputs.
+Call `create_models_predictions` with the assembled text prompt and the
+`image_prompt` inputs as described above, following the call pattern in
+`references/prompt-templates.md`.
+
+---
+
+### Optional: Grid-Based Batching (2×2)
+
+If you want to use grid-based generation (for example, generating 4 panels in a
+single 2×2 grid image and then splitting it into individual shots), you can
+batch **up to 4 consecutive shots in the same scene** into one Replicate call:
+
+1. Look at the ordered list of pending/failed shots in this scene.
+2. While at least 2–4 shots remain:
+   - Take the next **up to 4** shots as one batch.
+   - Build a **grid-style prompt** using the grid template from
+     `references/prompt-templates.md` (panel-by-panel section), filling in the
+     data for each of the batched shots.
+   - Assemble the `image_prompt` list using the same priority rules as above,
+     making sure all referenced characters/locations for the batch are
+     included.
+   - Call `create_models_predictions` once to generate the grid image.
+   - After generation, call the split script to cut the grid into per-shot
+     images:
+
+   ```bash
+   python "{PLUGIN_SCRIPTS}/split_grid.py" \
+     "{grid_path}" "{project_root}/shots/scene_{NN}/" \
+     --rows 2 --cols 2 \
+     --names {SHOT_ID_1},{SHOT_ID_2},{SHOT_ID_3},{SHOT_ID_4}
+   ```
+
+   - Map each output image back to the corresponding row in
+     `shots_master.csv` by `scene_number` and `shot_number`, set `local_path`,
+     `replicate_url`, and `status = "completed"` for each.
+
+3. If **only one shot** remains in the scene, fall back to the default
+   single-shot flow described in Steps 3a–3d above (no grid, no splitting).
+
+This keeps grid usage meaningful (only when there are multiple shots to batch)
+and still supports the simple case where a scene ends with a single remaining
+shot.
 
 ### 3e. Save & Post-Process
 

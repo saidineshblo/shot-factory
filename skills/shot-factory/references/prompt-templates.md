@@ -53,78 +53,114 @@ final asset path — URLs expire. Always save locally.
 
 ## 2. Character Sheet Prompt Template
 
+Use the **user-confirmed description** — not your own inference.
+
+```text
+Generate a professional animation character sheet for [CHARACTER NAME].
+[USER-CONFIRMED CHARACTER DESCRIPTION — species, age, build, clothing,
+colors, distinguishing features, personality. Use the exact description
+the user approved in Step 0].
+[ART STYLE — from Generation Config, e.g. "High-end Pixar/Disney quality
+3D animation, rich cinematic lighting, detailed textures, vibrant colors"].
+
+Include the following views clearly labelled in a single sheet:
+- Full-body FRONT view
+- Full-body SIDE view
+- Full-body BACK view
+- Close-up face FRONT
+- Close-up face SIDE
+- Close-up face BACK
+- Expression variations close-up: happy, sad, angry, surprised, neutral
+- Key prop / accessory detail callouts: [LIST CHARACTER PROPS]
+
+Keep the visual style, color palette, and proportions exactly consistent
+across all views. Label every view clearly on the sheet.
 ```
-PROMPT STRUCTURE:
-  "{style_profile.visual_style} character turnaround sheet of {character_name}.
 
-  Character description: {character_description}
 
-  Layout: 2x2 grid showing:
-  - Top-left: Front view, full body, neutral pose
-  - Top-right: 3/4 view, full body, slight turn
-  - Bottom-left: Side profile, full body
-  - Bottom-right: Back view, full body
-
-  CONSISTENCY LOCK: Same outfit, same proportions, same colors in every panel.
-  White or neutral background. No text overlays. Clean edges between panels."
-```
-
-**Grid config:** rows=2, cols=2
-**Panel names:** front, three_quarter, side, back
-
----
 
 ## 3. Location Sheet Prompt Template
 
+Use the **user-confirmed description** including filled-in time of day and lighting.
+
+```text
+Create a LOCATION SHEET for [LOCATION NAME].
+[USER-CONFIRMED LOCATION DESCRIPTION — architecture, furniture, key objects,
+colors, materials. Include the time of day and lighting quality that the
+user confirmed during gap-filling].
+[ART STYLE — from Generation Config, matching character sheet style].
+
+This is reference documentation, not a redesign.
+ABSOLUTE LOCK: Same location, same layout, same geometry and scale.
+Same materials, textures, lighting, color tone, and time of day.
+Only camera position, height, and angle may change between views.
+
+Generate ALL of the following views clearly labelled in one sheet:
+1. MASTER WIDE — Full establishing view of the entire location
+2. FRONT VIEW — Straight-on view aligned with the main axis of the space
+3. SIDE VIEW — Side profile showing depth and elevation
+4. REVERSE VIEW — Opposite direction of the master wide shot
+5. TOP / HIGH VIEW — Overhead or high-angle showing full layout
+6. KEY AREA PRIMARY — Medium close-up of [MOST IMPORTANT AREA]
+7. KEY AREA SECONDARY — Medium close-up of [SECONDARY AREA]
+8. DETAIL CLOSE-UP — Close-up of materials, textures, or surface details
+
+All views must feel like the same physical space captured from different
+camera positions only. Label every view clearly.
 ```
-PROMPT STRUCTURE:
-  "{style_profile.visual_style} environment concept art of {location_name}.
-
-  Location description: {location_description}
-  Time of day: {time_of_day}
-  Interior/Exterior: {int_ext}
-
-  Layout: 2x2 grid showing:
-  - Top-left: Wide establishing shot
-  - Top-right: Medium shot, key feature detail
-  - Bottom-left: Different angle, showing depth
-  - Bottom-right: Close-up of distinctive architectural/environmental detail
-
-  GEOMETRY LOCK: Same physical space in every panel. Consistent lighting
-  for {time_of_day}. No characters. No text overlays."
-```
-
-**Grid config:** rows=2, cols=2
-**Panel names:** establishing, detail, depth, closeup
 
 ---
 
-## 4. Shot Grid Prompt Template
+## 4. Shot Grid Prompt (2×2)
 
+Adjust rows/columns if user chose 3×3 in Generation Config.
+Pull all shot data from the **updated CSV**.
+
+```text
+Generate a [GRID_ROWS]x[GRID_COLS] grid of [TOTAL_PANELS] sequential
+cinematic animation film shots in [ASPECT_RATIO] format.
+[ART STYLE DESCRIPTION from Generation Config].
+
+Each panel must be clearly separated with thin borders.
+All panels must feel like consecutive frames from the same
+high-budget animated film.
+
+SETTING: [LOCATION NAME from updated CSV] — [LOCATION DESCRIPTION,
+TIME OF DAY, LIGHTING from updated CSV]
+
+CHARACTER REFERENCES: See attached images for character designs
+and location layout. Match them exactly.
+
+STYLE LOCK:
+- Match the exact visual style, color palette, line quality,
+  and art direction from the attached reference sheets exactly.
+- Characters must match their character sheets exactly
+  (face, costume, colors, proportions — no deviations).
+- Location must match the location sheet exactly
+  (layout, lighting, materials, color tone — no deviations).
+- Maintain consistent character scale relative to environment.
+
+[INCLUDE THIS BLOCK ONLY IF PREVIOUS SHOT REFERENCE IS ATTACHED:]
+CONTINUITY LOCK:
+- The attached previous shot image shows the immediately preceding frame.
+- Character positions, expressions, and environment state must continue
+  naturally from that frame. This is a sequential scene — not a restart.
+
+PANEL-BY-PANEL:
+Panel 1 ([SHOT_ID]): [CAMERA_ANGLE from CSV], [MAGNIFICATION from CSV],
+  [MOVEMENT from CSV] | [CHARACTER(S) from CSV]
+  | [ACTION DESCRIPTION from CSV] | [MOOD from CSV], [LIGHTING from CSV]
+
+Panel 2 ([SHOT_ID]): ...
+Panel 3 ([SHOT_ID]): ...
+Panel 4 ([SHOT_ID]): ...
+
+OUTPUT: A single [GRID_ROWS]x[GRID_COLS] grid image in [ASPECT_RATIO]
+containing all [TOTAL_PANELS] panels with clear thin borders.
 ```
-PROMPT STRUCTURE:
-  "{style_profile.visual_style} cinematic frame.
-
-  Scene: {location_name}, {time_of_day}
-  Shot type: {shot_type}, camera angle: {angle}
-  Action: {action_description}
-  Characters present: {characters}
-
-  {dialogue_hint — include ONLY if non-empty}
-
-  CONTINUITY LOCK:
-  - Characters must match their reference sheets exactly
-  - Location must match the location reference sheet
-  - Lighting consistent with {time_of_day}
-  - {continuity_notes — include ONLY if non-empty}
-
-  STYLE LOCK: {style_profile.visual_style}. Consistent with all previous frames.
-  Single frame, no panels, no text, no borders."
-```
-
-**Grid config:** Single image (rows=1, cols=1) — no splitting needed.
 
 ---
+
 
 ## 5. Style Proof Preamble
 
@@ -160,6 +196,8 @@ All other agents READ and UPDATE their relevant sections only.
     "resolution": "1K | 2K",
     "model_owner": "e.g. 'black-forest-labs'",
     "model_name": "e.g. 'flux-1.1-pro'",
+    "style_reference_paths": ["references/style_ref_1.png"],
+    "style_reference_labelled_paths": ["references/style_ref_1_labelled.png"],
     "custom_prompts": {}
   },
   "script": {

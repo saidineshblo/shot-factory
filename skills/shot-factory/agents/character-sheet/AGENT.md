@@ -33,14 +33,45 @@ You receive:
 
 ## Step 2: Validate User Reference (if exists)
 
+1. Before generating character sheets, ask the user if they already have
+   reference sheets for any of these characters. If yes, get a file path
+   or public URL for each one — copy them into the project and check if
+   they're usable. Any characters without an existing sheet should be
+   generated.
+
 If the character entry has a non-null `user_ref_path`:
 
 ```bash
 python "{PLUGIN_SCRIPTS}/validate_reference.py" "{user_ref_path}"
 ```
 
-If warnings about size: note them but continue (label_reference handles resize).
-If errors: tell user the reference image is unusable and proceed without it.
+If `validate_reference.py` reports that the image is too large or suggests
+resizing, first run the resize-only mode of `label_reference.py` to create
+a safe copy:
+
+```bash
+python "{PLUGIN_SCRIPTS}/label_reference.py" \
+  "{user_ref_path}" \
+  --resize-only \
+  --max-size 2048 \
+  --output "{project_root}/characters/{character_name}/user_ref_resized.png"
+```
+
+Then, create a **tagged** version of the safe reference so that the model
+can clearly read who this character is:
+
+```bash
+python "{PLUGIN_SCRIPTS}/label_reference.py" \
+  "{project_root}/characters/{character_name}/user_ref_resized.png" \
+  --type character \
+  --name "{character_name}" \
+  --output "{project_root}/characters/{character_name}/user_ref_resized_labelled.png"
+```
+
+Update `user_ref_path` in memory to point to the **tagged, resized** file
+(`user_ref_resized_labelled.png`) so that any subsequent validation or
+`image_prompt` usage relies on the safe, tagged reference.
+
 
 ---
 
@@ -52,13 +83,16 @@ Assemble the prompt:
 - Insert `style_profile.visual_style`
 - Insert `character_name`
 - Insert `description` from characters.json
-- If user provided a reference image, note it in the prompt as a visual guide
+- If user provided a reference image, mention it in the prompt as a visual
+  guide. The tagged reference will also be passed as `image_prompt` to
+  Replicate alongside the text prompt.
 
 ---
 
 ## Step 4: Generate via Replicate MCP
 
-Call `create_models_predictions` with:
+Check the model's accepted input fields (the MCP server or model docs will
+list them). Then call `create_models_predictions` with:
 - `model_owner`: from `style_profile.model_owner`
 - `model_name`: from `style_profile.model_name`
 - `Prefer`: "wait"
@@ -103,7 +137,6 @@ python "{PLUGIN_SCRIPTS}/label_reference.py" \
    }
    ```
 3. Write characters.json back
-
 4. Re-read `{project_root}/state/project.json`
 5. Increment `characters.completed`
 6. If `characters.completed == characters.total`:

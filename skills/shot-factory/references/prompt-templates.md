@@ -39,11 +39,15 @@ The prediction response includes an `output` field with a URL. Download the
 image immediately and save to the project folder:
 
 ```bash
+# Windows (PowerShell):
+Invoke-WebRequest -Uri "{output_url}" -OutFile "{target_path}"
+
+# macOS/Linux:
 curl -o "{target_path}" "{output_url}"
 ```
 
-Or use the Bash tool to download. NEVER store the URL as the final asset path —
-URLs expire. Always save locally.
+Or use the Bash tool with `WebFetch` to download. NEVER store the URL as the
+final asset path — URLs expire. Always save locally.
 
 ---
 

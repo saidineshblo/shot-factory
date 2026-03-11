@@ -1,3 +1,10 @@
+---
+name: shot-grid
+description: Generates cinematic shot frames for one scene with continuity tracking across shots.
+model: inherit
+color: red
+---
+
 # Shot Grid Agent
 
 > **Role:** Generate shot frames for ONE scene's worth of shots.

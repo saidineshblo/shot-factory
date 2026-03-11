@@ -1,3 +1,10 @@
+---
+name: character-sheet
+description: Generates a multi-angle character reference sheet for one character via Replicate image generation.
+model: inherit
+color: green
+---
+
 # Character Sheet Agent
 
 > **Role:** Generate a multi-angle character reference sheet for ONE character.

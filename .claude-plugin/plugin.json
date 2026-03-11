@@ -1,15 +1,18 @@
 {
   "name": "shot-factory",
-  "display_name": "Shot Factory",
   "version": "3.0.0",
   "description": "End-to-end animated film pre-production pipeline. Turns a script into character sheets, location sheets, and shot frames using Replicate image generation.",
-  "author": "Studioblo <tech@blo.studio>",
-  "skills": [
-    "skills/shot-factory/SKILL.md"
-  ],
-  "keywords": [
-    "animation", "film", "pipeline", "storyboard",
-    "character-sheet", "shot-breakdown", "replicate",
-    "pre-production", "screenplay", "shot-factory"
-  ]
+  "author": {
+    "name": "Studioblo",
+    "email": "tech@blo.studio"
+  },
+  "mcpServers": {
+    "replicate": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/replicate-mcp-fork/index.js"],
+      "env": {
+        "REPLICATE_API_TOKEN": "${REPLICATE_API_TOKEN}"
+      }
+    }
+  }
 }

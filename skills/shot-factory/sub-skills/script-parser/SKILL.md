@@ -1,3 +1,8 @@
+---
+name: script-parser
+description: Parse-only mode. Breaks down a screenplay into structured act CSVs, character lists, and location lists without generating images.
+---
+
 # Script Parser — Parse-Only Mode
 
 > **Dispatched by:** Master SKILL.md when intent is PARSE_ONLY.
@@ -20,6 +25,13 @@ The user wants to:
    navigate to `../../scripts/`. Verify the directory exists.
 2. Resolve `PLUGIN_AGENTS` — same parent, `../../agents/`.
 3. Resolve `PLUGIN_REFS` — same parent, `../../references/`.
+4. **Validate Replicate API token** — call the MCP tool `get_account`.
+   If it returns account info, print "Replicate API: connected as {username}"
+   and continue. If it returns an auth error or the tool is unavailable,
+   stop and tell the user:
+   "Replicate API token is missing or invalid.
+   Set REPLICATE_API_TOKEN as a system environment variable and restart
+   Claude Code."
 
 ---
 

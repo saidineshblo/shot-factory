@@ -1,3 +1,10 @@
+---
+name: location-sheet
+description: Generates a multi-angle location reference sheet for one location via Replicate image generation.
+model: inherit
+color: yellow
+---
+
 # Location Sheet Agent
 
 > **Role:** Generate a multi-angle location reference sheet for ONE location.

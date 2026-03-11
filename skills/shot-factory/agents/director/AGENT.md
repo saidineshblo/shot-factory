@@ -1,3 +1,10 @@
+---
+name: director
+description: Parses a script file into structured act CSV files with character and location extraction.
+model: inherit
+color: blue
+---
+
 # Director Agent
 
 > **Role:** Parse a script file into structured act CSV files.

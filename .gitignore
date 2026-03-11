@@ -12,3 +12,7 @@ __pycache__/
 .vscode/
 
 .venv/
+
+# Dependencies — exclude app-level node_modules but keep replicate-mcp-fork bundled
+node_modules/
+!replicate-mcp-fork/node_modules/

@@ -1,3 +1,8 @@
+---
+name: producer
+description: State management pattern for reading, initializing, and writing project.json across all agents and sub-skills.
+---
+
 # Producer — State Management Pattern
 
 > **This is NOT an agent.** This is an instruction set that every agent and

@@ -1,11 +1,15 @@
 ---
 name: script-parser
-description: Parse-only mode. Breaks down a screenplay into structured act CSVs, character lists, and location lists without generating images.
+description: >-
+  Parse-only mode. Breaks down a screenplay into
+  structured act CSVs, character lists, and location
+  lists without generating images.
 ---
 
 # Script Parser — Parse-Only Mode
 
-> **Dispatched by:** Master SKILL.md when intent is PARSE_ONLY.
+> **Dispatched by:** Master SKILL.md when intent is
+> PARSE_ONLY.
 > Breaks down a script without generating any images.
 
 ---
@@ -13,40 +17,51 @@ description: Parse-only mode. Breaks down a screenplay into structured act CSVs,
 ## When to Use
 
 The user wants to:
-- Parse a script and review the breakdown before committing to generation
-- Import a script into a new or existing project without running the full pipeline
+
+- Parse a script and review the breakdown before
+  committing to generation
+- Import a script into a new or existing project
+  without running the full pipeline
 - Re-parse a script after making edits
 
 ---
 
 ## Step 0: Preflight
 
-1. Resolve `PLUGIN_SCRIPTS` — derive from where this file was loaded,
-   navigate to `../../scripts/`. Verify the directory exists.
-2. Resolve `PLUGIN_AGENTS` — same parent, `../../agents/`.
-3. Resolve `PLUGIN_REFS` — same parent, `../../references/`.
+1. Resolve `PLUGIN_SCRIPTS` — derive from where this
+   file was loaded, navigate to `../../scripts/`.
+   Verify the directory exists.
+2. Resolve `PLUGIN_AGENTS` — same parent,
+   `../../agents/`.
+3. Resolve `PLUGIN_REFS` — same parent,
+   `../../references/`.
 
 ---
 
 ## Step 1: Producer Init
 
-- Follow Producer Init from `sub-skills/producer/SKILL.md`
+- Follow Producer Init from
+  `sub-skills/producer/SKILL.md`
 - Ask user for their script file path
 - Copy script to `{project_root}/script/original.{ext}`
 
-If a project already exists (user provides project path):
+If a project already exists (user provides project
+path):
+
 - Follow Producer Read instead
-- Confirm with user: "Re-parsing will overwrite the existing breakdown. Continue?"
+- Confirm with user: "Re-parsing will overwrite the
+  existing breakdown. Continue?"
 - If no: stop
 
 ---
 
 ## Step 2: Dispatch Director Agent
 
-```
+```text
 Task tool:
   subagent_type: "general-purpose"
-  prompt: "Read agents/director/AGENT.md and follow its instructions.
+  prompt: "Read agents/director/AGENT.md and follow
+           its instructions.
            script_path: {path}
            project_root: {project_root}
            PLUGIN_SCRIPTS: {scripts_path}"
@@ -71,11 +86,13 @@ Read the generated files and present to the user:
 3. **Location list:** Names with INT/EXT and time of day
 
 4. **Act structure:** How many acts, scenes per act
-5. **Missing required fields:** Scan `breakdown/master_breakdown.csv` (or
-   `shots/shots_master.csv` if already copied) for any empty cells in the
-   required columns defined in `references/prompt-templates.md`:
-   `shot_type`, `angle`, `characters`, `location`, `action_description`,
-   `time_of_day`.
+5. **Missing required fields:** Scan
+   `breakdown/master_breakdown.csv` (or
+   `shots/shots_master.csv` if already copied) for any
+   empty cells in the required columns defined in
+   `references/prompt-templates.md`:
+   `shot_type`, `angle`, `characters`, `location`,
+   `action_description`, `time_of_day`.
 
    Present these grouped by column, for example:
    - "Shots missing time_of_day: SC1-1, SC1-2, SC3-4"
@@ -85,16 +102,18 @@ Read the generated files and present to the user:
 
 ## Step 4: Interactive Edits (Optional)
 
-Ask: "Would you like to make any changes before continuing?"
+Ask: "Would you like to make any changes before
+continuing?"
 
 If yes, handle:
+
 - **Add/remove characters** — update characters.json
 - **Add/remove locations** — update locations.json
 - **Adjust shot breakdowns** — edit the act CSV files
 - **Re-split acts** — regenerate act boundaries
 
-When adjusting shot breakdowns, make sure to fill in **all missing values**
-for the required shot fields:
+When adjusting shot breakdowns, make sure to fill in
+**all missing values** for the required shot fields:
 
 - `shot_type`
 - `angle`
@@ -103,10 +122,11 @@ for the required shot fields:
 - `action_description`
 - `time_of_day`
 
-After edits, re-scan the breakdown to confirm there are **no empty cells**
-remaining in these required columns.
+After edits, re-scan the breakdown to confirm there are
+**no empty cells** remaining in these required columns.
 
-After each edit, re-read and re-display the affected section.
+After each edit, re-read and re-display the affected
+section.
 
 ---
 
@@ -118,9 +138,11 @@ Tell user:
 To generate images, run the pipeline:
   'Run the Shot Factory pipeline on {project_root}'"
 
-Treat `shots/shots_master.csv` (copied from the Director's
-`breakdown/master_breakdown.csv`) as the **updated shot breakdown** — the single
-source of truth for all later prompts. By the time this step completes, it
-should have no empty cells in the required columns listed above.
+Treat `shots/shots_master.csv` (copied from the
+Director's `breakdown/master_breakdown.csv`) as the
+**updated shot breakdown** — the single source of truth
+for all later prompts. By the time this step completes,
+it should have no empty cells in the required columns
+listed above.
 
 Set `current_stage = "breakdown"` in project.json.

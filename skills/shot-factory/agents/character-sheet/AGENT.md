@@ -15,6 +15,7 @@ color: green
 ## Input
 
 You receive:
+
 - `character_name`: the character to generate
 - `project_root`: absolute path to the project folder
 - `PLUGIN_SCRIPTS`: absolute path to the scripts directory
@@ -72,7 +73,6 @@ Update `user_ref_path` in memory to point to the **tagged, resized** file
 (`user_ref_resized_labelled.png`) so that any subsequent validation or
 `image_prompt` usage relies on the safe, tagged reference.
 
-
 ---
 
 ## Step 3: Build Prompt
@@ -80,6 +80,7 @@ Update `user_ref_path` in memory to point to the **tagged, resized** file
 Read the character sheet prompt template from `references/prompt-templates.md`.
 
 Assemble the prompt:
+
 - Insert `style_profile.visual_style`
 - Insert `character_name`
 - Insert `description` from characters.json
@@ -94,20 +95,22 @@ Assemble the prompt:
 Call the appropriate studioblo-replicate tool based on the model in
 `style_profile.model_owner`/`style_profile.model_name`:
 
-| Model | Tool |
-|-------|------|
-| google/nano-banana-pro | `nano_banana_pro` |
-| google/nano-banana-2 | `nano_banana_2` |
-| bytedance/seedream-5 | `seedream_5` |
-| bytedance/seedream-4.5 | `seedream_4_5` |
+| Model                   | Tool              |
+| ----------------------- | ----------------- |
+| google/nano-banana-pro  | `nano_banana_pro` |
+| google/nano-banana-2    | `nano_banana_2`   |
+| bytedance/seedream-5    | `seedream_5`      |
+| bytedance/seedream-4.5  | `seedream_4_5`    |
 
 Pass these parameters:
+
 - `prompt`: assembled prompt
 - `aspect_ratio`: from `style_profile.aspect_ratio`
 - `output_format`: "png"
 - `output_path`: `{project_root}/characters/{character_name}/`
 
 If the user provided a reference image:
+
 - `image_input`: list containing the local path to the reference image
 
 The tool saves the image directly to `output_path` and returns the file path.
@@ -120,15 +123,16 @@ The tool saves the image directly to `output_path` and returns the file path.
 2. Save to: `{project_root}/characters/{character_name}/sheet.png`
 3. Label it:
 
-```bash
-python "{PLUGIN_SCRIPTS}/label_reference.py" \
-  --type character \
-  --name "{character_name}" \
-  --output "{project_root}/characters/{character_name}/sheet_labelled.png" \
-  "{project_root}/characters/{character_name}/sheet.png"
-```
+   ```bash
+   python "{PLUGIN_SCRIPTS}/label_reference.py" \
+     --type character \
+     --name "{character_name}" \
+     --output "{project_root}/characters/{character_name}/sheet_labelled.png" \
+     "{project_root}/characters/{character_name}/sheet.png"
+   ```
 
-4. Write sidecar JSON to: `{project_root}/characters/{character_name}/sheet.json`
+4. Write sidecar JSON to:
+   `{project_root}/characters/{character_name}/sheet.json`
    (see sidecar format in prompt-templates.md)
 
 ---
@@ -137,6 +141,7 @@ python "{PLUGIN_SCRIPTS}/label_reference.py" \
 
 1. Re-read `{project_root}/characters/characters.json`
 2. Update this character's entry:
+
    ```json
    {
      "sheet_status": "completed",
@@ -145,6 +150,7 @@ python "{PLUGIN_SCRIPTS}/label_reference.py" \
      "sidecar_path": "characters/{name}/sheet.json"
    }
    ```
+
 3. Write characters.json back
 4. Re-read `{project_root}/state/project.json`
 5. Increment `characters.completed`
@@ -157,6 +163,7 @@ python "{PLUGIN_SCRIPTS}/label_reference.py" \
 ## Error Handling
 
 If Replicate returns an error:
+
 1. Set `sheet_status = "failed"` in characters.json
 2. Log the error message
 3. Do NOT block — return the error to the caller

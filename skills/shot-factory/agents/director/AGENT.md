@@ -15,6 +15,7 @@ color: blue
 ## Input
 
 You receive:
+
 - `script_path`: absolute path to the user's script file
 - `project_root`: absolute path to the project folder
 - `PLUGIN_SCRIPTS`: absolute path to the scripts directory
@@ -26,7 +27,7 @@ You receive:
 Identify the script format from the file extension and content:
 
 | Extension | Format | Parse strategy |
-|---|---|---|
+| --------- | ------ | -------------- |
 | `.csv` | CSV | Validate with `validate_csv.py`, use as-is if valid |
 | `.txt` | Plain text | Parse scene headings (INT./EXT.) and action lines |
 | `.fountain` | Fountain | Parse standard Fountain scene headings |
@@ -71,6 +72,7 @@ action_description, dialogue_hint, time_of_day, continuity_notes,
 replicate_url, local_path, status, error_log, attempts`
 
 For each scene, create reasonable shot breakdowns:
+
 - Default 3-5 shots per scene
 - Vary shot types (WIDE for establishing, MEDIUM for dialogue, CLOSE-UP for emotion)
 - Set all `status` to "pending", leave `replicate_url` empty
@@ -100,7 +102,6 @@ Treat `dialogue_hint`, `continuity_notes`, `replicate_url`, `local_path`,
    questions grouped by column so they can answer efficiently.
 4. Update the in-memory breakdown with the user's answers.
 
-
 ---
 
 ## Step 4: Act Splitting
@@ -109,7 +110,7 @@ This step is only needed when the script is long enough to warrant splitting.
 Split the breakdown into act files based on total page count:
 
 | Script length | Act structure |
-|---|---|
+| ------------- | ------------- |
 | 1-15 pages | 1 file: `act_01.csv` |
 | 16-40 pages | 2 files: `act_01.csv`, `act_02.csv` |
 | 41-80 pages | 3 files: `act_01.csv`, `act_02.csv`, `act_03.csv` |
@@ -131,10 +132,11 @@ required schema columns listed earlier.
 
 ## Step 5: Extract Character & Location Lists
 
-Scan the breakdown CSV(s) and extract: 
+Scan the breakdown CSV(s) and extract:
 
 **Characters:** unique values from the `characters` column.
 Write to `{project_root}/characters/characters.json`:
+
 ```json
 {
   "Khan": {
@@ -148,6 +150,7 @@ Write to `{project_root}/characters/characters.json`:
 
 **Locations:** unique values from the `location` column.
 Write to `{project_root}/locations/locations.json`:
+
 ```json
 {
   "Classroom": {
@@ -204,6 +207,7 @@ Copy the master breakdown to `{project_root}/shots/shots_master.csv`.
 ## Output
 
 Return to the caller:
+
 - Total scenes count
 - Total shots count
 - Character list (names only)

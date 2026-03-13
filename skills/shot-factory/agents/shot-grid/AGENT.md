@@ -16,6 +16,7 @@ color: red
 ## Input
 
 You receive:
+
 - `scene_number`: which scene to process
 - `project_root`: absolute path to the project folder
 - `PLUGIN_SCRIPTS`: absolute path to the scripts directory
@@ -38,6 +39,7 @@ You receive:
 Read from project.json and registry files:
 
 **Characters:** For each character in this scene's shots:
+
 - Load their `sheet_labelled_path` from `characters/characters.json`.
 - If `sheet_labelled_path` is missing but `sheet_local_path` (or another
   base image path) exists, create a tagged version **once** using
@@ -54,6 +56,7 @@ Read from project.json and registry files:
 - Always use the **labelled** paths as `image_prompt` inputs.
 
 **Location:** For this scene's location:
+
 - Load `sheet_labelled_path` from `locations/locations.json`.
 - If `sheet_labelled_path` is missing but `sheet_local_path` (or another base
   image path) exists, create a tagged version once using `label_reference.py`
@@ -111,6 +114,7 @@ For the default 1-shot-per-call behavior, iterate over each row with
 ```
 
 **Previous shot rules:**
+
 - If this is the FIRST shot in the scene → no previous shot
 - If this is NOT the first shot → use the previous shot in this scene
 - At SCENE BOUNDARIES → reset. Do NOT carry over from a different scene.
@@ -137,6 +141,7 @@ The result must be a **single text prompt string** that:
 ### 3c. Assemble image_prompt Input
 
 Build the reference file list in this priority order:
+
 1. Style reference paths (if any)
 2. Character sheet labelled paths — all characters in this shot
 3. Location sheet labelled path
@@ -159,13 +164,14 @@ Call the appropriate studioblo-replicate tool based on the model in
 `style_profile.model_owner`/`style_profile.model_name`:
 
 | Model | Tool |
-|-------|------|
+| ----- | ---- |
 | google/nano-banana-pro | `nano_banana_pro` |
 | google/nano-banana-2 | `nano_banana_2` |
 | bytedance/seedream-5 | `seedream_5` |
 | bytedance/seedream-4.5 | `seedream_4_5` |
 
 Pass:
+
 - `prompt`: the assembled text prompt from 3b
 - `image_input`: the ordered list of reference image paths from 3c
 - `aspect_ratio`: from `style_profile.aspect_ratio`
@@ -223,6 +229,7 @@ shot.
 ### 3f. Update shots_master.csv
 
 For this shot's row:
+
 - Set `status = "completed"`
 - Set `local_path` to the saved file path
 - Set `replicate_url` to the original URL (for reference only)
@@ -236,6 +243,7 @@ After processing all shots in this scene:
 1. Re-read `{project_root}/state/project.json`
 2. Count completed shots across ALL scenes (not just this one)
 3. Update:
+
    ```json
    {
      "shots": {
@@ -244,6 +252,7 @@ After processing all shots in this scene:
      }
    }
    ```
+
 4. Write project.json back
 
 ---
@@ -251,6 +260,7 @@ After processing all shots in this scene:
 ## Error Handling
 
 On Replicate failure for any individual shot:
+
 1. Set `status = "failed"` in shots_master.csv
 2. Set `error_log` to the error message
 3. Increment `attempts` counter

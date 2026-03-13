@@ -153,11 +153,26 @@ The final structure passed to Replicate should look like:
 - `input.image_prompt` (or the model's equivalent image-input field):
   the ordered list of reference image file paths described above.
 
-### 3d. Generate via Replicate MCP
+### 3d. Generate Image
 
-Call `create_models_predictions` with the assembled text prompt and the
-`image_prompt` inputs as described above, following the call pattern in
-`references/prompt-templates.md`.
+Call the appropriate studioblo-replicate tool based on the model in
+`style_profile.model_owner`/`style_profile.model_name`:
+
+| Model | Tool |
+|-------|------|
+| google/nano-banana-pro | `nano_banana_pro` |
+| google/nano-banana-2 | `nano_banana_2` |
+| bytedance/seedream-5 | `seedream_5` |
+| bytedance/seedream-4.5 | `seedream_4_5` |
+
+Pass:
+- `prompt`: the assembled text prompt from 3b
+- `image_input`: the ordered list of reference image paths from 3c
+- `aspect_ratio`: from `style_profile.aspect_ratio`
+- `output_format`: "png"
+- `output_path`: `{project_root}/shots/scene_{NN}/`
+
+The tool saves the image directly and returns the file path.
 
 ---
 
@@ -176,7 +191,7 @@ batch **up to 4 consecutive shots in the same scene** into one Replicate call:
    - Assemble the `image_prompt` list using the same priority rules as above,
      making sure all referenced characters/locations for the batch are
      included.
-   - Call `create_models_predictions` once to generate the grid image.
+   - Call the appropriate studioblo-replicate tool once to generate the grid image.
    - After generation, call the split script to cut the grid into per-shot
      images:
 

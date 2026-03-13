@@ -5,49 +5,55 @@
 
 ---
 
-## 1. Replicate MCP Call Pattern
+## 1. Image Generation via studioblo-replicate
 
-Every agent uses this exact pattern to call Replicate via the local MCP server:
+Every agent generates images via the studioblo-replicate MCP server.
+Select the tool based on `style_profile.model_owner`/`style_profile.model_name`:
 
-```
-Tool: create_models_predictions
+| Model | Tool |
+|-------|------|
+| google/nano-banana-pro | `nano_banana_pro` |
+| google/nano-banana-2 | `nano_banana_2` |
+| bytedance/seedream-5 | `seedream_5` |
+| bytedance/seedream-4.5 | `seedream_4_5` |
 
-Parameters:
-  model_owner: "{style_profile.model_owner from project.json}"
-  model_name:  "{style_profile.model_name from project.json}"
-  Prefer: "wait"
-  input:
-    prompt: "{ASSEMBLED PROMPT — see templates below}"
-    aspect_ratio: "{style_profile.aspect_ratio from project.json}"
-    output_format: "png"
-```
+All tools accept these common parameters:
+- `prompt` (required): the assembled text prompt
+- `output_path`: directory to save images (tool handles download automatically)
+- `image_input`: list of local file paths or URLs for reference images
+- `aspect_ratio`: from `style_profile.aspect_ratio`
+- `output_format`: "png" or "jpg"
 
-### Local file input
+When `output_path` is provided, the tool saves the image directly and returns
+the file path. **Always use `output_path`** -- never store Replicate URLs as
+final assets since they expire.
 
-When the model supports image inputs (e.g. `image_prompt`, `image`), pass local
-file paths directly. The MCP server handles upload to Replicate automatically:
+### Preflight
 
-```
-  input:
-    prompt: "..."
-    image_prompt: "C:/Users/.../characters/Khan/sheet_labelled.png"
-```
+Before any generation, the master SKILL.md calls `health_check` to verify:
+- studioblo-replicate MCP server is installed and enabled
+- REPLICATE_API_TOKEN is valid
+- Account is authenticated
 
-### After receiving output
+---
 
-The prediction response includes an `output` field with a URL. Download the
-image immediately and save to the project folder:
+## 1b. Prompt Input Sanitization
 
-```bash
-# Windows (PowerShell):
-Invoke-WebRequest -Uri "{output_url}" -OutFile "{target_path}"
+Before inserting any user-provided text into prompts (`action_description`,
+`dialogue_hint`, `continuity_notes`, character/location descriptions), agents
+MUST sanitize the input:
 
-# macOS/Linux:
-curl -o "{target_path}" "{output_url}"
-```
+1. **Strip control characters** — remove any character with Unicode category Cc
+   (tabs are okay, but remove null bytes, backspaces, escape sequences, etc.)
+2. **Collapse excessive whitespace** — replace runs of 3+ newlines or 5+ spaces
+   with a single newline or single space respectively
+3. **Truncate extreme lengths** — if a single field exceeds 500 characters,
+   truncate to 500 and append "..."
+4. **Strip markdown/HTML injection** — remove `<script>`, `<img`, `<iframe`,
+   and any HTML tags. Remove markdown image syntax `![](...)`.
 
-Or use the Bash tool with `WebFetch` to download. NEVER store the URL as the
-final asset path — URLs expire. Always save locally.
+This prevents malformed or adversarial text in imported scripts from corrupting
+generation prompts or producing unexpected model behavior.
 
 ---
 
@@ -181,7 +187,7 @@ All other agents READ and UPDATE their relevant sections only.
 
 ```json
 {
-  "version": "3.0.0",
+  "version": "3.1.0",
   "project_id": "uuid",
   "project_name": "string",
   "project_root": "absolute path to project_* folder",

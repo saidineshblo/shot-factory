@@ -8,46 +8,15 @@ Turns a screenplay or shot breakdown into character reference sheets, location c
 
 - Claude Code with plugin support
 - Python 3.9+ with Pillow (`pip install Pillow`)
-- Replicate API token
+- studioblo-replicate MCP server (MCPB bundle)
 
 ## Setup
 
-### 1. Set your Replicate API token
+### 1. Install studioblo-replicate MCP server
 
-Store your token as a **system environment variable** — not in a `.env` file.
-Environment variables are never committed to version control and are not
-readable by other tools scanning your project files.
-
-Get your token at https://replicate.com/account/api-tokens
-
-**Windows (PowerShell — permanent, persists across reboots):**
-
-```powershell
-setx REPLICATE_API_TOKEN "r8_your_token_here"
-```
-
-Then **restart your terminal** for the change to take effect.
-To verify: `echo %REPLICATE_API_TOKEN%` (cmd) or `$env:REPLICATE_API_TOKEN` (PowerShell).
-
-**macOS / Linux (permanent — add to your shell profile):**
-
-```bash
-# For zsh (default on macOS):
-echo 'export REPLICATE_API_TOKEN="r8_your_token_here"' >> ~/.zshrc
-source ~/.zshrc
-
-# For bash:
-echo 'export REPLICATE_API_TOKEN="r8_your_token_here"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-To verify: `echo $REPLICATE_API_TOKEN`
-
-> **Why not `.env`?** Files in your project directory can be read by Claude Code,
-> coworkers with repo access, and any tool with filesystem permissions. A system
-> environment variable stays outside the project tree entirely. The `mcp.json`
-> already uses `${REPLICATE_API_TOKEN}` substitution, so it picks up the
-> environment variable automatically — no `.env` needed.
+Get the `studioblo-replicate.mcpb` bundle from your admin and double-click it
+to install in Claude Desktop. You will be prompted to enter your Replicate API
+token during installation. Get a token at https://replicate.com/account/api-tokens
 
 ### 2. Install Python dependencies
 
@@ -55,10 +24,11 @@ To verify: `echo $REPLICATE_API_TOKEN`
 pip install Pillow pytest
 ```
 
-### 3. MCP server (auto-configured)
+### 3. Verify setup
 
-The Replicate MCP server is declared in `mcp.json` and starts automatically
-when Claude Code loads the plugin. No manual setup required.
+Start Claude Code and run Shot Factory. The plugin automatically runs a health
+check on startup to verify studioblo-replicate is installed, enabled, and your
+token is valid. If anything is wrong, you'll see a clear error message.
 
 ## Usage
 

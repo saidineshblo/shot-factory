@@ -86,15 +86,25 @@ Assemble the prompt:
 
 ---
 
-## Step 4: Generate via Replicate MCP
+## Step 4: Generate Image
 
-Call `create_models_predictions` with:
-- `model_owner`: from `style_profile.model_owner`
-- `model_name`: from `style_profile.model_name`
-- `Prefer`: "wait"
-- `input.prompt`: assembled prompt
-- `input.aspect_ratio`: from `style_profile.aspect_ratio`
-- `input.output_format`: "png"
+Call the appropriate studioblo-replicate tool based on the model in
+`style_profile.model_owner`/`style_profile.model_name`:
+
+| Model | Tool |
+|-------|------|
+| google/nano-banana-pro | `nano_banana_pro` |
+| google/nano-banana-2 | `nano_banana_2` |
+| bytedance/seedream-5 | `seedream_5` |
+| bytedance/seedream-4.5 | `seedream_4_5` |
+
+Pass these parameters:
+- `prompt`: assembled prompt
+- `aspect_ratio`: from `style_profile.aspect_ratio`
+- `output_format`: "png"
+- `output_path`: `{project_root}/locations/{location_name}/`
+
+The tool saves the image directly to `output_path` and returns the file path.
 
 ---
 

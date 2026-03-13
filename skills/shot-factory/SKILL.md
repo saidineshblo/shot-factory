@@ -137,30 +137,40 @@ Before dispatching any sub-skill or agent, run these checks in order:
 
 Verify `PLUGIN_SCRIPTS` exists. If not, tell the user the plugin is misconfigured.
 
-### 2. Validate Replicate API Token
+### 2. studioblo-replicate Health Check
 
-Call the Replicate MCP tool `get_account` (no parameters needed).
+Call the `health_check` tool from studioblo-replicate MCP server.
 
-- **If it returns account info** — token is valid. Print:
-  "Replicate API: connected as {username}"
-  Continue to dispatch.
+**If the tool is not found (MCP server not installed):**
+Tell the user:
+"The studioblo-replicate MCP server is not installed.
+Get the studioblo-replicate.mcpb file from your admin and install it:
+  Claude Desktop > Settings > Extensions > Install Extension... > select the .mcpb file
+Then restart Claude Code."
+**Do NOT proceed.**
 
-- **If it returns an auth error or the MCP tool is not available** — stop
-  immediately and tell the user:
-  "Replicate API token is missing or invalid.
-  Set REPLICATE_API_TOKEN as a system environment variable and restart
-  Claude Code. See README for setup instructions."
-  **Do NOT proceed to any sub-skill or agent.**
+**If the tool exists but is disabled:**
+Tell the user:
+"The studioblo-replicate MCP server is installed but disabled.
+Enable it in Claude Desktop:
+  Settings > Extensions > studioblo-replicate > enable
+Then restart Claude Code."
+**Do NOT proceed.**
+
+**If health_check returns a response starting with "FAIL":**
+Show the exact error message to the user and stop. The health_check response
+already includes step-by-step instructions for the user to fix the issue.
+**Do NOT proceed.**
+
+**If health_check returns "OK":**
+Print the account info and continue to dispatch.
 
 ---
 
 ## Requirements
 
-- **Replicate API token** — set `REPLICATE_API_TOKEN` as a system environment
-  variable (see README for platform-specific instructions). The MCP server
-  declared in `plugin.json` picks it up automatically via variable substitution.
 - **Python 3.9+** with Pillow installed (`pip install Pillow`)
-- **Replicate MCP server** — local fork at `replicate-mcp-fork/` (auto-configured in plugin.json)
+- **studioblo-replicate** MCP server — install the MCPB bundle from your admin
 
 ---
 

@@ -13,6 +13,5 @@ __pycache__/
 
 .venv/
 
-# Dependencies — exclude app-level node_modules but keep replicate-mcp-fork bundled
+# Dependencies
 node_modules/
-!replicate-mcp-fork/node_modules/

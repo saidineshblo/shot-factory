@@ -58,7 +58,10 @@ LABEL_CONFIG = {
     },
 }
 
+_BUNDLED_FONT = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans-Bold.ttf")
+
 _FONT_PATHS = [
+    _BUNDLED_FONT,
     "C:/Windows/Fonts/arialbd.ttf",
     "C:/Windows/Fonts/arial.ttf",
     "/System/Library/Fonts/Supplemental/Arial Bold.ttf",

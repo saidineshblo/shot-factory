@@ -2,16 +2,18 @@
 """
 Build an HTML contact sheet from a completed project.json state file.
 
-Outputs a single self-contained HTML file with:
+Outputs a lightweight HTML file using relative image paths (no base64 embedding).
+The HTML file must live in project_root for paths to resolve correctly.
+
+Contents:
   - Project summary
-  - Character reference sheets (inline base64 or relative paths)
+  - Character reference sheets
   - Location reference sheets
   - All shots organized by scene
 
 Usage:
     python build_contact_sheet.py <project.json> <output.html>
 """
-import base64
 import json
 import os
 import sys
@@ -19,15 +21,15 @@ from datetime import datetime
 
 
 def _img_tag(local_path, alt, project_root):
-    """Return an <img> tag. Embeds image as base64 if file exists."""
-    full_path = os.path.join(project_root, local_path) if local_path else None
-    if full_path and os.path.exists(full_path):
-        ext = os.path.splitext(full_path)[1].lower().lstrip(".")
-        fmt = "jpeg" if ext in ("jpg", "jpeg") else "png"
-        with open(full_path, "rb") as f:
-            b64 = base64.b64encode(f.read()).decode()
-        return f'<img src="data:image/{fmt};base64,{b64}" alt="{alt}" style="max-width:100%">'
-    return f'<div style="background:#333;color:#aaa;padding:20px;text-align:center">[{alt} — not found]</div>'
+    """Return an <img> tag using a relative path. Falls back to a placeholder."""
+    if not local_path:
+        return f'<div class="placeholder">[{alt} — no path]</div>'
+    full_path = os.path.join(project_root, local_path)
+    if not os.path.exists(full_path):
+        return f'<div class="placeholder">[{alt} — not found]</div>'
+    # Use forward slashes for browser compatibility
+    rel = local_path.replace("\\", "/")
+    return f'<img src="{rel}" alt="{alt}" loading="lazy" style="max-width:100%">'
 
 
 def build_contact_sheet(state_path, output_path):
@@ -48,29 +50,39 @@ def build_contact_sheet(state_path, output_path):
 
     sections = []
 
-    # Characters
-    chars = state.get("characters", {})
-    if chars:
+    # Characters — load from registry JSON, not from project.json summary
+    chars_meta = state.get("characters", {})
+    chars_registry = chars_meta.get("registry_path", "") if isinstance(chars_meta, dict) else ""
+    chars_json = os.path.join(project_root, chars_registry) if chars_registry else None
+    if chars_json and os.path.exists(chars_json):
+        with open(chars_json) as f:
+            chars = json.load(f)
         items = ""
         for name, data in chars.items():
             if isinstance(data, dict):
                 path = data.get("sheet_local_path", "")
                 img = _img_tag(path, f"{name} character sheet", project_root)
                 items += f'<div class="card"><h3>{name}</h3>{img}</div>'
-        sections.append(f'<section><h2>Character Sheets</h2>'
-                        f'<div class="grid">{items}</div></section>')
+        if items:
+            sections.append(f'<section><h2>Character Sheets</h2>'
+                            f'<div class="grid">{items}</div></section>')
 
-    # Locations
-    locs = state.get("locations", {})
-    if locs:
+    # Locations — load from registry JSON, not from project.json summary
+    locs_meta = state.get("locations", {})
+    locs_registry = locs_meta.get("registry_path", "") if isinstance(locs_meta, dict) else ""
+    locs_json = os.path.join(project_root, locs_registry) if locs_registry else None
+    if locs_json and os.path.exists(locs_json):
+        with open(locs_json) as f:
+            locs = json.load(f)
         items = ""
         for name, data in locs.items():
             if isinstance(data, dict):
                 path = data.get("sheet_local_path", "")
                 img = _img_tag(path, f"{name} location sheet", project_root)
                 items += f'<div class="card"><h3>{name}</h3>{img}</div>'
-        sections.append(f'<section><h2>Location Sheets</h2>'
-                        f'<div class="grid">{items}</div></section>')
+        if items:
+            sections.append(f'<section><h2>Location Sheets</h2>'
+                            f'<div class="grid">{items}</div></section>')
 
     # Shots
     shots = state.get("shots", {})
@@ -108,13 +120,14 @@ def build_contact_sheet(state_path, output_path):
   .grid {{ display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; }}
   .card {{ background: #2a2a2a; border-radius: 8px; padding: 12px; width: 220px; }}
   .card p {{ font-size: 0.8rem; color: #888; margin: 4px 0 0; }}
+  .placeholder {{ background: #333; color: #aaa; padding: 20px; text-align: center; border-radius: 4px; }}
   footer {{ color: #555; font-size: 0.75rem; margin-top: 48px; }}
 </style>
 </head>
 <body>
 <h1>{project_name} — Production Contact Sheet</h1>
 {''.join(sections)}
-<footer>Generated: {generated_at} | Shot Factory v3.0</footer>
+<footer>Generated: {generated_at} | Shot Factory v3.1</footer>
 </body>
 </html>"""
 

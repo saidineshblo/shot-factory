@@ -28,13 +28,6 @@ The user wants to:
    navigate to `../../scripts/`. Verify the directory exists.
 2. Resolve `PLUGIN_AGENTS` — same parent, `../../agents/`.
 3. Resolve `PLUGIN_REFS` — same parent, `../../references/`.
-4. **Validate Replicate API token** — call the MCP tool `get_account`.
-   If it returns account info, print "Replicate API: connected as {username}"
-   and continue. If it returns an auth error or the tool is unavailable,
-   stop and tell the user:
-   "Replicate API token is missing or invalid.
-   Set REPLICATE_API_TOKEN as a system environment variable and restart
-   Claude Code."
 
 ---
 
@@ -97,13 +90,24 @@ Show the user what will be regenerated:
 
 ---
 
-## Step 4: Reset State
+## Step 4: Archive & Reset State
 
-For each targeted item:
-- Set status back to "pending"
-- Clear generated file paths (but do NOT delete existing files yet —
-  they serve as fallback until new ones succeed)
-- Write updated state files
+For each targeted item, **archive the existing assets before resetting**:
+
+1. Create `{asset_dir}/archive/v{N}/` where N is the current `attempts` count
+   (or 1 if no attempts field exists).
+   - Characters: `{project_root}/characters/{name}/archive/v{N}/`
+   - Locations: `{project_root}/locations/{name}/archive/v{N}/`
+   - Shots: `{project_root}/shots/scene_{NN}/archive/v{N}/`
+2. Move (not copy) the existing generated files into the archive folder:
+   - `sheet.png`, `sheet_labelled.png`, `sheet.json` for characters/locations
+   - `shot_{NN}.png`, `shot_{NN}.json` for shots
+3. Then reset state:
+   - Set status back to "pending"
+   - Clear generated file paths
+   - Write updated state files
+
+This preserves a full history of previous generations for comparison or rollback.
 
 ---
 

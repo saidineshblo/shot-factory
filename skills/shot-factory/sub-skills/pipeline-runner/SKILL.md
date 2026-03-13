@@ -49,8 +49,11 @@ Ask the user (skip if resuming and config already exists):
 1. "What visual style?" → e.g. "Pixar-style 3D animation"
 2. **Style Reference Images** — Yes, I have one | No, skip this
 3. "Aspect ratio?" → 16:9, 1:1, or 9:16
-4. "Which Replicate model?" → e.g. "google/nano-banana-2"
-   (Show a few recommendations if they're unsure)
+4. "Which model?" → Present these options:
+   - `google/nano-banana-pro` — Best for editing with reference images (up to 2K)
+   - `google/nano-banana-2` — Fast generation, conversational editing, Google Search grounding
+   - `bytedance/seedream-5` — Built-in reasoning, complex scenes (up to 3K)
+   - `bytedance/seedream-4.5` — Spatial understanding, architecture (up to 4K)
 
 Save to `style_profile` in project.json.
 
@@ -320,6 +323,9 @@ python "{PLUGIN_SCRIPTS}/build_contact_sheet.py" \
   "{project_root}/state/project.json" \
   "{project_root}/contact_sheet.html"
 ```
+
+The contact sheet uses relative image paths (not base64), so it stays lightweight
+regardless of project size. It must remain in `project_root/` to resolve correctly.
 
 ### Step 12: Complete
 

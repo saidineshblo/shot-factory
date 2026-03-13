@@ -57,7 +57,7 @@ The pipeline-runner uses this when starting a fresh project:
 5. Write initial `state/project.json`:
    ```json
    {
-     "version": "3.0.0",
+     "version": "3.1.0",
      "project_id": "{generated UUID}",
      "project_name": "{user's project name}",
      "project_root": "{absolute path to project folder}",

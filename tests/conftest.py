@@ -60,9 +60,10 @@ def valid_breakdown_csv(tmp_path):
         ["act", "scene_number", "shot_number", "shot_type", "angle",
          "characters", "location", "action_description",
          "dialogue_hint", "time_of_day", "continuity_notes",
-         "replicate_url", "status"],
+         "replicate_url", "local_path", "status", "error_log", "attempts"],
         ["1", "1", "1", "WIDE", "EYE LEVEL", "Khan",
-         "Classroom", "Khan enters room", "", "DAY", "", "", "pending"],
+         "Classroom", "Khan enters room", "", "DAY", "", "",
+         "", "pending", "", "0"],
     ]
     with open(p, "w", newline="") as f:
         csv.writer(f).writerows(rows)
@@ -71,22 +72,46 @@ def valid_breakdown_csv(tmp_path):
 
 @pytest.fixture
 def minimal_project_state(tmp_path):
-    """Minimal project.json state for contact sheet tests."""
+    """Minimal project.json state with separate registry files for contact sheet tests."""
     import json
+
+    # Create characters registry
+    chars_dir = tmp_path / "characters"
+    chars_dir.mkdir()
+    chars = {
+        "Khan": {
+            "sheet_local_path": "characters/Khan/sheet.png",
+            "sheet_status": "completed"
+        }
+    }
+    (chars_dir / "characters.json").write_text(json.dumps(chars, indent=2))
+
+    # Create locations registry
+    locs_dir = tmp_path / "locations"
+    locs_dir.mkdir()
+    locs = {
+        "Classroom": {
+            "sheet_local_path": "locations/Classroom/overview_sheet.png",
+            "sheet_status": "completed"
+        }
+    }
+    (locs_dir / "locations.json").write_text(json.dumps(locs, indent=2))
+
+    # Create project.json with registry_path references
     state = {
         "project_name": "TestFilm",
         "project_root": str(tmp_path),
         "characters": {
-            "Khan": {
-                "sheet_local_path": "characters/Khan/sheet.png",
-                "sheet_status": "completed"
-            }
+            "status": "completed",
+            "total": 1,
+            "completed": 1,
+            "registry_path": "characters/characters.json"
         },
         "locations": {
-            "Classroom": {
-                "sheet_local_path": "locations/Classroom/overview_sheet.png",
-                "sheet_status": "completed"
-            }
+            "status": "completed",
+            "total": 1,
+            "completed": 1,
+            "registry_path": "locations/locations.json"
         },
         "shots": {
             "status": "completed",

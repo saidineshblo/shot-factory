@@ -25,7 +25,10 @@ REQUIRED_COLUMNS = [
     "time_of_day",
     "continuity_notes",
     "replicate_url",
+    "local_path",
     "status",
+    "error_log",
+    "attempts",
 ]
 
 VALID_SHOT_TYPES = {
